@@ -1,7 +1,8 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 import boto3
 from botocore.exceptions import ClientError
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -79,5 +80,27 @@ def list_objects(bucket_name):
         flash(f"Error: {e}", "danger")
         return redirect(url_for('index'))
 
+# Download an object from the bucket
+@app.route('/download/<bucket_name>/<object_key>')
+def download_object(bucket_name, object_key):
+    try:
+        # Fetch the object from S3
+        s3_object = s3.get_object(Bucket=bucket_name, Key=object_key)
+        object_data = s3_object['Body'].read()
+
+        # Create a byte stream to return as a file download
+        file_stream = BytesIO(object_data)
+
+        # Return the file as a download response
+        return send_file(
+            file_stream,
+            as_attachment=True,
+            download_name=object_key
+        )
+    except ClientError as e:
+        flash(f"Error downloading object: {e}", "danger")
+        return redirect(url_for('list_objects', bucket_name=bucket_name))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
