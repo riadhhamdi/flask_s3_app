@@ -6,25 +6,43 @@ from botocore.exceptions import ClientError
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
-# Fetch custom AWS S3 endpoint from environment variables
+# Fetch custom AWS S3 endpoint and proxy from environment variables
 s3_endpoint = os.getenv('AWS_S3_ENDPOINT', None)
+http_proxy = os.getenv('HTTP_PROXY', None)
+https_proxy = os.getenv('HTTPS_PROXY', None)
 
-# Initialize the S3 client
+# Prepare proxy configuration if proxies are defined
+proxies = None
+if http_proxy or https_proxy:
+    proxies = {
+        'http': http_proxy,
+        'https': https_proxy
+    }
+
+# Initialize the S3 client with proxy support
 if s3_endpoint:
     s3 = boto3.client(
         's3',
         endpoint_url=s3_endpoint,  # Custom endpoint
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        region_name=os.getenv('AWS_REGION', 'us-east-1')
+        region_name=os.getenv('AWS_REGION', 'us-east-1'),
+        config=boto3.session.Config(proxies=proxies)  # Add proxy config
     )
 else:
-    s3 = boto3.client('s3')  # Default AWS S3 client (no custom endpoint)
+    s3 = boto3.client(
+        's3',
+        config=boto3.session.Config(proxies=proxies)  # Default AWS S3 client with proxy config
+    )
 
 # Home Route - Display available buckets and actions
 @app.route('/')
 def index():
-    buckets = s3.list_buckets().get('Buckets')
+    try:
+        buckets = s3.list_buckets().get('Buckets')
+    except ClientError as e:
+        flash(f"Error: {e}", "danger")
+        buckets = []
     return render_template('index.html', buckets=buckets)
 
 # Create a new bucket
