@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Amazon S3 Buckets</h1>
+
+<h2>Create a New Bucket</h2>
+<form method="POST" action="/create_bucket">
+    <div class="form-group">
+        <label for="bucket_name">Bucket Name</label>
+        <input type="text" name="bucket_name" id="bucket_name" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Bucket</button>
+</form>
+
+<h2>Existing Buckets</h2>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Bucket Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for bucket in buckets %}
+        <tr>
+            <td>{{ bucket.Name }}</td>
+            <td>
+                <a href="/list_objects/{{ bucket.Name }}" class="btn btn-info">View Objects</a>
+                <a href="/delete_bucket/{{ bucket.Name }}" class="btn btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

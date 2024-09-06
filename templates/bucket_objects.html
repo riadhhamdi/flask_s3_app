@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Objects in Bucket: {{ bucket_name }}</h1>
+
+{% if objects %}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Object Key</th>
+            <th>Size (Bytes)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obj in objects %}
+        <tr>
+            <td>{{ obj.Key }}</td>
+            <td>{{ obj.Size }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No objects found in this bucket.</p>
+{% endif %}
+
+<a href="/" class="btn btn-primary">Back to Buckets</a>
+{% endblock %}
