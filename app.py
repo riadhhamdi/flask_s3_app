@@ -6,10 +6,11 @@ from botocore.exceptions import ClientError
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
-# Fetch custom AWS S3 endpoint and proxy from environment variables
+# Fetch custom AWS S3 endpoint, proxy, and SSL verification settings from environment variables
 s3_endpoint = os.getenv('AWS_S3_ENDPOINT', None)
 http_proxy = os.getenv('HTTP_PROXY', None)
 https_proxy = os.getenv('HTTPS_PROXY', None)
+ignore_ssl = os.getenv('IGNORE_SSL', 'false').lower() == 'true'
 
 # Prepare proxy configuration if proxies are defined
 proxies = None
@@ -19,7 +20,7 @@ if http_proxy or https_proxy:
         'https': https_proxy
     }
 
-# Initialize the S3 client with proxy support
+# Initialize the S3 client with proxy support and SSL verification setting
 if s3_endpoint:
     s3 = boto3.client(
         's3',
@@ -27,12 +28,14 @@ if s3_endpoint:
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         region_name=os.getenv('AWS_REGION', 'us-east-1'),
-        config=boto3.session.Config(proxies=proxies)  # Add proxy config
+        config=boto3.session.Config(proxies=proxies),
+        verify=not ignore_ssl  # Enable or disable SSL verification based on IGNORE_SSL env variable
     )
 else:
     s3 = boto3.client(
         's3',
-        config=boto3.session.Config(proxies=proxies)  # Default AWS S3 client with proxy config
+        config=boto3.session.Config(proxies=proxies),
+        verify=not ignore_ssl  # Enable or disable SSL verification
     )
 
 # Home Route - Display available buckets and actions
